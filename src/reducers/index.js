@@ -1,7 +1,8 @@
 import { combineReducers } from 'redux';
+import ViewPointReducer from './reducer_view_point';
 
 const rootReducer = combineReducers({
-	state: (state = {}) => state
+	viewPoint: ViewPointReducer
 });
 
 export default rootReducer;

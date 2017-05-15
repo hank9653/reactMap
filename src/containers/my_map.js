@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { withGoogleMap, GoogleMap, Marker } from 'react-google-maps';
+import { withGoogleMap, GoogleMap, Marker , DirectionsRenderer } from 'react-google-maps';
+import {connect} from 'react-redux';
 
 const GettingStartedGoogleMap = withGoogleMap(props => (
 	<GoogleMap
@@ -9,6 +10,7 @@ const GettingStartedGoogleMap = withGoogleMap(props => (
 		<Marker
 			position={props.center}
 		/>
+		{(props.directions==null) ? null:<DirectionsRenderer directions={props.directions} />}
 		{console.log(props)}
 	</GoogleMap>
 ));
@@ -19,9 +21,10 @@ class MyMap extends Component {
 		super();
 
 		const center = { lat: 60, lng: 105 };
-		this.state = {center: center};
+		this.state = {center: center,directions: null};
 	}
 	componentDidMount(){
+		console.log("componentDidMount")
 		navigator.geolocation.getCurrentPosition((position) => {
 	      	this.setState({
 	        	center: {
@@ -31,6 +34,31 @@ class MyMap extends Component {
 	        	content: `Location found using HTML5.`,
 	    	});
 		});
+	}
+
+	componentWillReceiveProps(nextProps) {
+		console.log("ViewPointState");
+		console.log(nextProps);
+		console.log(nextProps.viewPoint);
+		const location = new google.maps.LatLng(this.state.center.lat, this.state.center.lng)
+		const position = nextProps.viewPoint[0].location;
+		const destination = new google.maps.LatLng(position.lat, position.lng);
+
+		const DirectionsService = new google.maps.DirectionsService();
+
+	    DirectionsService.route({
+	    	origin: location,
+	    	destination: destination,
+	    	travelMode: google.maps.TravelMode.DRIVING,
+	    }, (result, status) => {
+	    	if (status === google.maps.DirectionsStatus.OK) {
+	    		this.setState({
+	    			directions: result,
+	    		});
+	    	} else {
+	    		console.error(`error fetching directions ${result}`);
+	    	}
+	    });
 	}
 
 	render() {
@@ -44,15 +72,19 @@ class MyMap extends Component {
 						<div style={{ height: `100%` }} />
 					}
 					center={this.state.center}
+					directions={this.state.directions}
 				/>
 			</div>
 		);
 	}
 }
 
-// MyMap.setProps({center: {
-//           lat: 60,
-//           lng: 105,
-//         }});
+function mapStateToProps({viewPoint}){
+	console.log("viewPoint");
+	console.log(viewPoint);
 
-export default MyMap;
+	return {viewPoint};
+	
+}
+
+export default connect(mapStateToProps)(MyMap);
